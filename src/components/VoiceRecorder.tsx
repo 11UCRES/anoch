@@ -5,20 +5,31 @@ import { cn } from '@/src/lib/utils';
 
 interface VoiceRecorderProps {
   onSend: (audioBase64: string) => void;
+  onRecordingStateChange?: (isRecording: boolean) => void;
   disabled?: boolean;
 }
 
-export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, disabled }) => {
+export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onRecordingStateChange, disabled }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const shouldSendImmediatelyRef = useRef(false);
 
   const startRecording = async () => {
+    if (typeof MediaRecorder === 'undefined') {
+      alert("Your browser does not support voice recording. Please use a modern browser like Chrome or Safari.");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      // Try to find a supported mime type
+      const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/wav'];
+      const mimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       
       const chunks: BlobPart[] = [];
@@ -27,13 +38,32 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, disabled }
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
         stream.getTracks().forEach(track => track.stop());
+        
+        if (shouldSendImmediatelyRef.current && chunks.length > 0) {
+          const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = reader.result as string;
+            onSend(base64);
+            onRecordingStateChange?.(false);
+            setAudioBlob(null);
+            setRecordingTime(0);
+            shouldSendImmediatelyRef.current = false;
+          };
+          reader.readAsDataURL(blob);
+        } else {
+          // If cancelled or not sent immediately, just reset
+          onRecordingStateChange?.(false);
+          setAudioBlob(null);
+          setRecordingTime(0);
+          shouldSendImmediatelyRef.current = false;
+        }
       };
 
       mediaRecorder.start();
       setIsRecording(true);
+      onRecordingStateChange?.(true);
       setRecordingTime(0);
       
       timerRef.current = setInterval(() => {
@@ -45,8 +75,18 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, disabled }
     }
   };
 
+  const stopAndSend = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      shouldSendImmediatelyRef.current = true;
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      shouldSendImmediatelyRef.current = false;
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
@@ -54,22 +94,20 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, disabled }
   };
 
   const cancelRecording = () => {
-    stopRecording();
-    setAudioBlob(null);
-    setRecordingTime(0);
+    if (mediaRecorderRef.current && isRecording) {
+      shouldSendImmediatelyRef.current = false;
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      onRecordingStateChange?.(false);
+      setAudioBlob(null);
+      setRecordingTime(0);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
   };
 
   const sendRecording = () => {
-    if (audioBlob) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64 = reader.result as string;
-        onSend(base64);
-        setAudioBlob(null);
-        setRecordingTime(0);
-      };
-      reader.readAsDataURL(audioBlob);
-    }
+    // This is no longer needed but kept for interface consistency if called elsewhere
+    cancelRecording();
   };
 
   const formatTime = (seconds: number) => {
@@ -85,7 +123,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, disabled }
   }, []);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center flex-1">
       <AnimatePresence mode="wait">
         {!isRecording && !audioBlob ? (
           <motion.button
@@ -97,55 +135,92 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, disabled }
             onClick={startRecording}
             disabled={disabled}
             className={cn(
-              "p-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+              "p-2 text-gray-500 hover:text-[#0084ff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
               disabled && "grayscale"
             )}
           >
-            <Mic size={20} />
+            <Mic size={24} />
           </motion.button>
         ) : isRecording ? (
           <motion.div
             key="recording"
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 20, opacity: 0 }}
-            className="flex items-center gap-3 bg-red-50 px-4 py-2 rounded-full border border-red-100"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-between w-full"
           >
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-sm font-mono text-red-600">{formatTime(recordingTime)}</span>
-            <button
+            <div className="flex items-center gap-2 md:gap-4">
+              <button
+                type="button"
+                onClick={cancelRecording}
+                className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+              >
+                <Trash2 size={20} className="md:size-24" />
+              </button>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-xs md:text-sm font-bold text-white">{formatTime(recordingTime)}</span>
+              </div>
+            </div>
+            
+            <div className="flex-1 px-2 md:px-4 flex items-center justify-center gap-0.5 md:gap-1 overflow-hidden">
+              {[...Array(12)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ height: [6, Math.random() * 16 + 6, 6] }}
+                  transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.05 }}
+                  className="w-[2px] md:w-[3px] bg-[#5b61e0] rounded-full opacity-60"
+                />
+              ))}
+            </div>
+
+            <motion.button
               type="button"
-              onClick={stopRecording}
-              className="p-1 text-red-600 hover:bg-red-100 rounded-full transition-colors"
+              onClick={stopAndSend}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={cn(
+                "w-9 h-9 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-lg",
+                "bg-[#5b61e0] text-white"
+              )}
             >
-              <Square size={16} fill="currentColor" />
-            </button>
+              <Send size={16} className="md:size-20 ml-0.5 md:ml-1" />
+            </motion.button>
           </motion.div>
         ) : (
           <motion.div
             key="preview"
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 10, opacity: 0 }}
-            className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-between w-full"
           >
             <button
               type="button"
               onClick={cancelRecording}
-              className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-full transition-colors"
+              className="p-2 text-gray-500 hover:text-red-500 transition-colors"
             >
-              <Trash2 size={18} />
+              <Trash2 size={24} />
             </button>
-            <div className="text-xs font-medium text-gray-600 px-2">
-              Voice Message ({formatTime(recordingTime)})
+            
+            <div className="flex-1 flex items-center justify-center gap-3">
+              <div className="text-sm font-bold text-white">
+                Voice Message ({formatTime(recordingTime)})
+              </div>
             </div>
-            <button
+
+            <motion.button
               type="button"
               onClick={sendRecording}
-              className="p-1.5 bg-blue-500 text-white hover:bg-blue-600 rounded-full transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={cn(
+                "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-lg",
+                "bg-[#5b61e0] text-white"
+              )}
             >
-              <Send size={18} />
-            </button>
+              <Send size={18} className="md:size-20 ml-1" />
+            </motion.button>
           </motion.div>
         )}
       </AnimatePresence>

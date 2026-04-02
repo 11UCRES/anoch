@@ -11,8 +11,21 @@ export interface Message {
 
 export type ConnectionStatus = 'idle' | 'waiting' | 'matched' | 'disconnected';
 
+export interface HistoryItem {
+  id: string;
+  partnerUsername: string;
+  timestamp: number;
+  messages: Message[];
+}
+
 export interface Stats {
   online: number;
   waiting: number;
   chatting: number;
+}
+
+export interface SessionStats {
+  duration: number; // in milliseconds
+  messageCount: number;
+  partnerUsername: string;
 }
