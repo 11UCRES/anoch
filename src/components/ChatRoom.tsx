@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, LogOut, Loader2, Volume2, Mic, Circle, Smile, Palette } from 'lucide-react';
+import { Send, User, LogOut, Loader2, Volume2, Mic, Circle, Smile, Palette, MoreVertical, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Message, ConnectionStatus } from '@/src/types';
 import { VoiceRecorder } from './VoiceRecorder';
@@ -95,106 +95,54 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
 
   return (
     <div className={cn(
-      "flex flex-col h-full w-full max-w-2xl mx-auto md:shadow-2xl md:rounded-2xl overflow-hidden border-x border-gray-100 transition-colors duration-300",
+      "flex flex-col h-full w-full max-w-4xl mx-auto overflow-hidden transition-colors duration-300",
       theme.bg
     )}>
       {/* Header */}
       <header className={cn(
-        "border-b px-6 py-4 flex items-center justify-between z-20 backdrop-blur-md bg-opacity-80 sticky top-0",
-        theme.bg === 'bg-white' ? "border-gray-100 bg-white" : "border-gray-800 bg-opacity-90"
+        "px-6 py-6 flex items-center justify-between z-20",
+        theme.bg
       )}>
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center",
-            theme.accent
-          )}>
-            <User size={24} className={theme.id === 'light' ? "text-blue-600" : "text-white"} />
-          </div>
-          <div>
-            <h2 className={cn("font-bold", theme.text)}>{partnerUsername}</h2>
-            <div className="flex items-center gap-1.5">
-              <Circle 
-                size={8} 
-                className={cn(
-                  status === 'matched' ? "fill-green-500 text-green-500" : "fill-gray-300 text-gray-300 animate-pulse"
-                )} 
-              />
-              <span className="text-xs text-gray-500 font-medium">
-                {status === 'matched' ? "Connected" : "Finding partner..."}
-              </span>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold tracking-tighter text-white">Nocturne</h1>
+          {status === 'matched' && (
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full border border-white/10">
+              <div className="w-2 h-2 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.8)]" />
+              <span className="text-[10px] font-bold tracking-widest text-gray-300 uppercase">Matched</span>
             </div>
-          </div>
+          )}
         </div>
         
-        <div className="flex items-center gap-1 sm:gap-2">
-          <div className="relative">
-            <button
-              onClick={() => setShowThemePicker(!showThemePicker)}
-              className={cn(
-                "p-2 rounded-full transition-colors",
-                theme.id === 'light' ? "hover:bg-gray-100 text-gray-600" : "hover:bg-gray-800 text-gray-400"
-              )}
-              title="Change Theme"
-            >
-              <Palette size={20} />
-            </button>
-            <AnimatePresence>
-              {showThemePicker && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                  className={cn(
-                    "absolute right-0 mt-2 p-2 rounded-xl shadow-xl border z-50 flex flex-col gap-1 min-w-[120px]",
-                    theme.id === 'light' ? "bg-white border-gray-100" : "bg-gray-800 border-gray-700"
-                  )}
-                >
-                  {themes.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => {
-                        onThemeChange(t);
-                        setShowThemePicker(false);
-                      }}
-                      className={cn(
-                        "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors",
-                        theme.id === t.id 
-                          ? (theme.id === 'light' ? "bg-blue-50 text-blue-600" : "bg-gray-700 text-white")
-                          : (theme.id === 'light' ? "hover:bg-gray-50 text-gray-600" : "hover:bg-gray-700 text-gray-400")
-                      )}
-                    >
-                      <div className={cn("w-3 h-3 rounded-full", t.primary)} />
-                      {t.name}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
+        <div className="flex items-center gap-4">
           <motion.button
             onClick={onNext}
-            animate={status === 'disconnected' ? { scale: [1, 1.05, 1] } : {}}
-            transition={status === 'disconnected' ? { repeat: Infinity, duration: 1.5 } : {}}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             className={cn(
-              "flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-sm font-semibold transition-all active:scale-95",
-              status === 'disconnected' 
-                ? (theme.id === 'light' ? "bg-blue-600 text-white shadow-lg" : "bg-indigo-600 text-white shadow-lg")
-                : (theme.id === 'light' ? "bg-gray-100 hover:bg-gray-200 text-gray-700" : "bg-gray-800 hover:bg-gray-700 text-gray-200")
+              "px-6 py-2 rounded-full text-sm font-bold transition-all",
+              "bg-[#8e94f2] text-white shadow-[0_0_15px_rgba(142,148,242,0.3)]"
             )}
-            title="Find Next Partner"
           >
-            <LogOut size={16} />
-            <span className="hidden sm:inline">Next</span>
+            Skip
           </motion.button>
+          <button className="text-gray-400 hover:text-white transition-colors">
+            <MoreVertical size={20} />
+          </button>
         </div>
       </header>
 
       {/* Messages Area */}
       <div className={cn(
-        "flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar relative",
-        theme.id === 'light' ? "bg-gray-50/50" : "bg-black/20"
+        "flex-1 overflow-y-auto px-6 py-4 space-y-8 custom-scrollbar relative",
+        theme.bg
       )}>
+        {/* Date Separator */}
+        <div className="flex justify-center my-8">
+          <div className="bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-gray-500 uppercase">Today</span>
+          </div>
+        </div>
+
         <AnimatePresence initial={false}>
           {messages.map((msg) => {
             if (msg.senderId === 'system') {
@@ -222,46 +170,59 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 className={cn(
-                  "flex w-full",
-                  isMe ? "justify-end" : "justify-start"
+                  "flex flex-col w-full",
+                  isMe ? "items-end" : "items-start"
                 )}
               >
+                <span className={cn(
+                  "text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2",
+                  isMe ? "mr-2" : "ml-2"
+                )}>
+                  {isMe ? "You" : "Stranger"}
+                </span>
+
                 <div className={cn(
-                  "max-w-[80%] px-4 py-3 rounded-2xl shadow-sm",
+                  "max-w-[85%] px-5 py-4 rounded-2xl shadow-sm",
                   isMe 
-                    ? (theme.primary + " text-white rounded-tr-none") 
-                    : (theme.id === 'light' ? "bg-white text-gray-800 border border-gray-100" : "bg-gray-800 text-gray-100 border border-gray-700") + " rounded-tl-none"
+                    ? (theme.primary + " text-white") 
+                    : (theme.accent + " text-gray-100")
                 )}>
                   {msg.type === 'text' ? (
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words font-medium">
                       {msg.text}
                     </p>
                   ) : (
-                    <button
-                      onClick={() => playAudio(msg.audio!)}
-                      className={cn(
-                        "flex items-center gap-3 group transition-opacity active:opacity-70",
-                        isMe ? "text-white" : (theme.id === 'light' ? "text-blue-600" : "text-indigo-400")
-                      )}
-                    >
-                      <div className={cn(
-                        "p-2 rounded-full",
-                        isMe ? "bg-white/20" : (theme.id === 'light' ? "bg-blue-50" : "bg-gray-700")
-                      )}>
-                        <Volume2 size={20} />
+                    <div className="flex items-center gap-4 min-w-[200px]">
+                      <button
+                        onClick={() => playAudio(msg.audio!)}
+                        className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90",
+                          isMe ? "bg-white/20 text-white" : "bg-white/10 text-[#8e94f2]"
+                        )}
+                      >
+                        <Volume2 size={20} fill="currentColor" />
+                      </button>
+                      <div className="flex-1 h-8 flex items-center gap-[2px]">
+                        {[...Array(12)].map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={cn(
+                              "w-[2px] rounded-full",
+                              isMe ? "bg-white/40" : "bg-white/20"
+                            )}
+                            style={{ height: `${Math.random() * 100}%` }}
+                          />
+                        ))}
                       </div>
-                      <div className="flex flex-col items-start text-left">
-                        <span className="text-xs font-bold uppercase tracking-wider opacity-80">Voice Message</span>
-                        <span className="text-[10px] opacity-60">Click to play</span>
-                      </div>
-                    </button>
+                      <span className="text-[10px] font-mono opacity-60">0:12</span>
+                    </div>
                   )}
-                  <div className={cn(
-                    "text-[10px] mt-1.5 opacity-50",
-                    isMe ? "text-right" : "text-left"
-                  )}>
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+                </div>
+                <div className={cn(
+                  "text-[10px] mt-2 font-medium text-gray-600",
+                  isMe ? "mr-2" : "ml-2"
+                )}>
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                 </div>
               </motion.div>
             );
@@ -272,88 +233,67 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 text-gray-400 text-xs font-medium italic ml-2"
+            className="flex flex-col items-start ml-2"
           >
-            <div className="flex gap-1">
-              <Circle size={4} className="fill-gray-400 text-gray-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <Circle size={4} className="fill-gray-400 text-gray-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <Circle size={4} className="fill-gray-400 text-gray-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="flex items-center gap-3 text-gray-500 text-xs font-medium italic">
+              <div className="flex gap-1">
+                <Circle size={4} className="fill-gray-600 text-gray-600 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <Circle size={4} className="fill-gray-600 text-gray-600 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <Circle size={4} className="fill-gray-600 text-gray-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+              <span className="text-[13px] text-gray-500">Stranger is typing...</span>
             </div>
-            Partner is typing...
           </motion.div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
-      <footer className={cn(
-        "p-4 border-t transition-colors duration-300 relative",
-        theme.id === 'light' ? "bg-white border-gray-100" : "bg-gray-900 border-gray-800"
-      )}>
-        <AnimatePresence>
-          {showEmojiPicker && (
-            <motion.div
-              ref={emojiPickerRef}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="absolute bottom-full right-4 mb-4 z-50"
-            >
-              <EmojiPicker 
-                onEmojiClick={onEmojiClick} 
-                theme={theme.id === 'light' ? EmojiTheme.LIGHT : EmojiTheme.DARK}
-                width={300}
-                height={400}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <form onSubmit={handleSend} className="flex items-center gap-3">
-          <div className="flex-1 relative flex items-center">
-            <button
-              type="button"
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className={cn(
-                "absolute left-3 p-1.5 rounded-full transition-colors z-10",
-                theme.id === 'light' ? "text-gray-400 hover:bg-gray-200" : "text-gray-500 hover:bg-gray-800"
-              )}
-            >
-              <Smile size={20} />
-            </button>
+      <footer className="p-8 relative">
+        <div className={cn(
+          "max-w-4xl mx-auto rounded-full px-6 py-3 flex items-center gap-4 transition-all duration-300",
+          "bg-[#1a1b1e] border border-white/5 shadow-2xl"
+        )}>
+          <button className="text-gray-500 hover:text-white transition-colors">
+            <Plus size={24} />
+          </button>
+          
+          <form onSubmit={handleSend} className="flex-1 flex items-center gap-4">
             <input
               type="text"
               value={inputText}
               onChange={handleInputChange}
               disabled={status !== 'matched'}
-              placeholder={
-                status === 'matched' 
-                  ? "Type a message..." 
-                  : status === 'disconnected' 
-                    ? "Partner disconnected. Click Next." 
-                    : "Waiting for partner..."
-              }
+              placeholder="Whisper something..."
               className={cn(
-                "w-full pl-12 pr-12 py-3 border-none rounded-full text-sm focus:ring-2 transition-all disabled:opacity-50",
-                theme.id === 'light' ? "bg-gray-100 focus:ring-blue-500 text-gray-900" : "bg-gray-800 focus:ring-indigo-500 text-white"
+                "w-full bg-transparent border-none text-base focus:ring-0 placeholder:text-gray-600 text-white",
+                "disabled:opacity-50"
               )}
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-               <VoiceRecorder onSend={onSendVoice} disabled={status !== 'matched'} />
+            
+            <div className="flex items-center gap-4">
+              <button 
+                type="button"
+                className="text-gray-500 hover:text-white transition-colors"
+              >
+                <Mic size={24} />
+              </button>
+              
+              <motion.button
+                type="submit"
+                disabled={!inputText.trim() || status !== 'matched'}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-lg",
+                  "bg-[#5b61e0] text-white disabled:opacity-50 disabled:grayscale"
+                )}
+              >
+                <Send size={20} className="ml-1" />
+              </motion.button>
             </div>
-          </div>
-          <button
-            type="submit"
-            disabled={!inputText.trim() || status !== 'matched'}
-            className={cn(
-              "p-3 text-white rounded-full transition-all active:scale-90 disabled:opacity-50",
-              theme.primary,
-              theme.id === 'light' ? "hover:bg-blue-700" : "hover:brightness-110"
-            )}
-          >
-            <Send size={20} />
-          </button>
-        </form>
+          </form>
+        </div>
       </footer>
     </div>
   );

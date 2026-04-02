@@ -9,6 +9,14 @@ export interface Theme {
 
 export const themes: Theme[] = [
   {
+    id: 'nocturne',
+    name: 'Nocturne',
+    primary: 'bg-[#5b61e0]',
+    bg: 'bg-[#0a0a0c]',
+    text: 'text-white',
+    accent: 'bg-[#2d2f34]',
+  },
+  {
     id: 'light',
     name: 'Light',
     primary: 'bg-blue-600',

@@ -83,7 +83,7 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
               transition={{ delay: 0.1 }}
               className={cn("text-4xl font-black mb-4 tracking-tight", theme.text)}
             >
-              AnonChat
+              Nocturne
             </motion.h1>
 
             <motion.p
