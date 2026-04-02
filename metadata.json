@@ -1,0 +1,5 @@
+{
+  "name": "AnonChat: Anonymous 1-to-1 Chat",
+  "description": "A production-ready anonymous 1-to-1 chat application with real-time text and voice messaging.",
+  "requestFramePermissions": ["microphone"]
+}
