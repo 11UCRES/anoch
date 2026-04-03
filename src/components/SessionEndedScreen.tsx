@@ -75,7 +75,7 @@ export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ stats, t
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onFindNew}
-            className="w-full sm:w-auto px-6 md:px-10 py-3.5 md:py-5 rounded-2xl md:rounded-3xl bg-[#8e94f2] text-white font-black text-base md:text-lg shadow-xl shadow-[#8e94f2]/20 flex items-center justify-center gap-2 md:gap-3"
+            className="w-full sm:w-auto px-6 md:px-10 py-3.5 md:py-5 rounded-2xl md:rounded-3xl bg-[#8e94f2] text-white font-black text-base md:text-lg shadow-xl shadow-[#8e94f2]/20 flex items-center justify-center gap-2 md:gap-3 cursor-pointer"
           >
             <UserPlus size={20} />
             Find New Partner
@@ -86,7 +86,7 @@ export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ stats, t
             whileTap={{ scale: 0.98 }}
             onClick={onGoHome}
             className={cn(
-              "w-full sm:w-auto px-6 md:px-10 py-3.5 md:py-5 rounded-2xl md:rounded-3xl border font-black text-base md:text-lg transition-all flex items-center justify-center gap-2 md:gap-3",
+              "w-full sm:w-auto px-6 md:px-10 py-3.5 md:py-5 rounded-2xl md:rounded-3xl border font-black text-base md:text-lg transition-all flex items-center justify-center gap-2 md:gap-3 cursor-pointer",
               theme.accent,
               theme.text,
               theme.border,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, Users, Shield, Zap, Loader2, Globe, LayoutGrid, MessageCircle, User, Clock, Lock, Settings, MoreHorizontal, Radio, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Users, Shield, Zap, Loader2, Globe, LayoutGrid, MessageCircle, User, Clock, Lock, Settings, MoreHorizontal, Radio, ArrowLeft, Trash2, X, Mail, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Stats, HistoryItem } from '@/src/types';
 import { Theme } from '@/src/themes';
@@ -13,12 +13,18 @@ interface MatchmakingScreenProps {
   theme: Theme;
   history: HistoryItem[];
   socketId: string | null;
+  onDeleteHistory: (id: string) => void;
 }
 
-export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, isSearching, stats, theme, history, socketId }) => {
+export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, isSearching, stats, theme, history, socketId, onDeleteHistory }) => {
   const [activeTab, setActiveTab] = useState<'matchmaking' | 'history' | 'privacy'>('matchmaking');
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
+  const [hoveredHistoryId, setHoveredHistoryId] = useState<string | null>(null);
   const [username, setUsername] = useState('');
+  const [legalModal, setLegalModal] = useState<{ isOpen: boolean, type: 'tos' | 'privacy' | 'cookies' | 'contact' | null }>({
+    isOpen: false,
+    type: null
+  });
 
   const handleStart = () => {
     onStart(username.trim() || 'Anonymous');
@@ -71,10 +77,6 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
         </nav>
 
         <div className={cn("p-6 border-t", theme.border)}>
-          <div className={cn("flex items-center gap-3 text-xs font-bold uppercase tracking-widest", theme.textMuted)}>
-            <Settings size={14} />
-            <span>Settings</span>
-          </div>
         </div>
       </aside>
 
@@ -118,13 +120,7 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
         {/* Top Header */}
         <header className="w-full max-w-7xl mx-auto p-4 md:p-8 flex justify-between items-center z-20">
           <div className="flex items-center gap-8">
-            <Logo size={24} className="md:hidden" theme={theme} />
-            <nav className="hidden lg:flex items-center gap-8">
-              <button className="text-blue-500 text-sm font-bold hover:opacity-80 transition-all">Chat</button>
-              <button className={cn("text-sm font-bold transition-all", theme.textMuted, "hover:" + theme.text)}>How it works</button>
-              <button className={cn("text-sm font-bold transition-all", theme.textMuted, "hover:" + theme.text)}>Safety</button>
-              <button className={cn("text-sm font-bold transition-all", theme.textMuted, "hover:" + theme.text)}>Community</button>
-            </nav>
+            <Logo size={24} className="md:hidden cursor-pointer hover:opacity-80 transition-opacity" theme={theme} />
           </div>
           <div className="flex items-center gap-4">
             <div className={cn(
@@ -330,31 +326,73 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
                     <div className="space-y-4">
                       {history.length > 0 ? (
                         history.map((item) => (
-                          <button 
-                            key={item.id} 
-                            onClick={() => setSelectedHistoryItem(item)}
-                            className={cn(
-                              "w-full border p-6 rounded-3xl flex items-center justify-between group transition-all text-left",
-                              theme.card,
-                              theme.border,
-                              "hover:border-[#8e94f2]/30"
-                            )}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center overflow-hidden", theme.accent, theme.textMuted)}>
-                                <Logo size={24} showText={false} theme={theme} />
+                          <div key={item.id} className="relative group/item">
+                            <button 
+                              onClick={() => setSelectedHistoryItem(item)}
+                              onMouseEnter={() => setHoveredHistoryId(item.id)}
+                              onMouseLeave={() => setHoveredHistoryId(null)}
+                              className={cn(
+                                "w-full border p-6 rounded-3xl flex items-center justify-between group transition-all text-left relative overflow-hidden",
+                                theme.card,
+                                theme.border,
+                                "hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/5"
+                              )}
+                            >
+                              <div className="flex items-center gap-5">
+                                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110", theme.accent, theme.textMuted)}>
+                                  <Logo size={28} showText={false} theme={theme} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className={cn("text-lg font-black tracking-tight mb-0.5", theme.text)}>{item.partnerUsername}</h4>
+                                  <p className={cn("text-xs font-medium opacity-60", theme.textMuted)}>
+                                    {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {item.messages.filter(m => m.senderId !== 'system').length} messages
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <h4 className={cn("font-bold", theme.text)}>{item.partnerUsername}</h4>
-                                <p className={cn("text-xs font-medium", theme.textMuted)}>
-                                  {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {item.messages.filter(m => m.senderId !== 'system').length} messages
-                                </p>
+                              <div className={cn("p-2 transition-all group-hover:translate-x-1", theme.textMuted, "group-hover:" + theme.text)}>
+                                <Clock size={20} />
                               </div>
-                            </div>
-                            <div className={cn("p-2 transition-colors", theme.textMuted, "group-hover:" + theme.text)}>
-                              <Clock size={20} />
-                            </div>
-                          </button>
+
+                              {/* Hover Preview */}
+                              <AnimatePresence>
+                                {hoveredHistoryId === item.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className={cn(
+                                      "absolute right-16 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-end pointer-events-none",
+                                      "max-w-[200px]"
+                                    )}
+                                  >
+                                    <div className={cn(
+                                      "px-4 py-2 rounded-2xl border backdrop-blur-xl shadow-2xl text-[11px] font-medium line-clamp-2",
+                                      theme.accent,
+                                      theme.border,
+                                      theme.text
+                                    )}>
+                                      {item.messages.filter(m => m.type === 'text').slice(-1)[0]?.text || "Voice message"}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </button>
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteHistory(item.id);
+                              }}
+                              className={cn(
+                                "absolute -right-2 top-1/2 -translate-y-1/2 p-3 rounded-full opacity-0 group-hover/item:opacity-100 group-hover/item:translate-x-full transition-all hover:bg-red-500/20 hover:text-red-500",
+                                theme.textMuted
+                              )}
+                              title="Delete History"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
                         ))
                       ) : (
                         <div className={cn("text-center py-20 border rounded-[40px]", theme.card, theme.border)}>
@@ -402,6 +440,114 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
           </AnimatePresence>
         </div>
 
+        <AnimatePresence>
+          {legalModal.isOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setLegalModal({ isOpen: false, type: null })}
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className={cn(
+                  "relative w-full max-w-2xl max-h-[80vh] overflow-hidden border rounded-[40px] shadow-2xl flex flex-col",
+                  theme.card,
+                  theme.border
+                )}
+              >
+                <div className={cn("p-6 md:p-8 border-b flex items-center justify-between", theme.border)}>
+                  <h2 className={cn("text-2xl font-black tracking-tight", theme.text)}>
+                    {legalModal.type === 'tos' && "Terms of Service"}
+                    {legalModal.type === 'privacy' && "Privacy Policy"}
+                    {legalModal.type === 'cookies' && "Cookie Policy"}
+                    {legalModal.type === 'contact' && "Contact Us"}
+                  </h2>
+                  <button 
+                    onClick={() => setLegalModal({ isOpen: false, type: null })}
+                    className={cn("p-2 rounded-full transition-all", theme.accent, theme.textMuted, "hover:" + theme.text)}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                  <div className={cn("space-y-6 text-sm md:text-base leading-relaxed", theme.textMuted)}>
+                    {legalModal.type === 'tos' && (
+                      <>
+                        <p>Welcome to Nocturne. By using our service, you agree to these terms.</p>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>1. Use of Service</h3>
+                          <p>Nocturne provides an anonymous 1-to-1 chat platform. You must be at least 18 years old to use this service.</p>
+                        </section>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>2. Prohibited Conduct</h3>
+                          <p>You agree not to use Nocturne for any illegal purposes, harassment, spam, or distribution of harmful content. We reserve the right to terminate access for violations.</p>
+                        </section>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>3. Disclaimer</h3>
+                          <p>The service is provided "as is". We are not responsible for the content of messages exchanged between users.</p>
+                        </section>
+                      </>
+                    )}
+                    {legalModal.type === 'privacy' && (
+                      <>
+                        <p>Your privacy is our core mission.</p>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>1. Data Collection</h3>
+                          <p>We do not collect personal information, IP addresses, or browser fingerprints. No registration is required.</p>
+                        </section>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>2. Message Ephemerality</h3>
+                          <p>All messages are stored in-memory only and are permanently deleted once a session ends or a user disconnects.</p>
+                        </section>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>3. Third Parties</h3>
+                          <p>We do not share any data with third parties because we do not store any data to share.</p>
+                        </section>
+                      </>
+                    )}
+                    {legalModal.type === 'cookies' && (
+                      <>
+                        <p>Nocturne uses minimal cookies for essential functionality.</p>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>1. Essential Cookies</h3>
+                          <p>We use session-based storage to maintain your connection state and theme preferences during your visit.</p>
+                        </section>
+                        <section className="space-y-3">
+                          <h3 className={cn("text-lg font-bold", theme.text)}>2. No Tracking</h3>
+                          <p>We do not use advertising or tracking cookies. Your browsing behavior is not monitored.</p>
+                        </section>
+                      </>
+                    )}
+                    {legalModal.type === 'contact' && (
+                      <div className="flex flex-col items-center justify-center py-12 text-center space-y-8">
+                        <div className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-500">
+                          <Mail size={40} />
+                        </div>
+                        <div>
+                          <h3 className={cn("text-2xl font-black mb-2", theme.text)}>Get in Touch</h3>
+                          <p className="max-w-xs mx-auto">Have questions or feedback? We'd love to hear from you.</p>
+                        </div>
+                        <a 
+                          href="mailto:support@nocturne.chat" 
+                          className="px-8 py-4 bg-blue-500 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all flex items-center gap-2"
+                        >
+                          Email Support <ExternalLink size={18} />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         {/* Footer */}
         <footer className={cn("p-12 border-t", theme.sidebar, theme.border)}>
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
@@ -410,18 +556,10 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
               <p className={cn("text-xs font-bold uppercase tracking-widest", theme.textMuted)}>© 2024 Nocturne Secure Messaging. All rights reserved.</p>
             </div>
             <div className={cn("flex flex-wrap justify-center gap-6 text-[10px] font-black uppercase tracking-widest", theme.textMuted)}>
-              <button className={cn("transition-colors hover:" + theme.text)}>Terms of Service</button>
-              <button className={cn("transition-colors hover:" + theme.text)}>Privacy Policy</button>
-              <button className={cn("transition-colors hover:" + theme.text)}>Cookies</button>
-              <button className={cn("transition-colors hover:" + theme.text)}>Contact</button>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors border", theme.accent, theme.textMuted, "hover:" + theme.text, theme.border)}>
-                <Globe size={18} />
-              </button>
-              <button className={cn("w-10 h-10 rounded-full flex items-center justify-center transition-colors border", theme.accent, theme.textMuted, "hover:" + theme.text, theme.border)}>
-                <LayoutGrid size={18} />
-              </button>
+              <button onClick={() => setLegalModal({ isOpen: true, type: 'tos' })} className={cn("transition-colors hover:" + theme.text)}>Terms of Service</button>
+              <button onClick={() => setLegalModal({ isOpen: true, type: 'privacy' })} className={cn("transition-colors hover:" + theme.text)}>Privacy Policy</button>
+              <button onClick={() => setLegalModal({ isOpen: true, type: 'cookies' })} className={cn("transition-colors hover:" + theme.text)}>Cookies</button>
+              <button onClick={() => setLegalModal({ isOpen: true, type: 'contact' })} className={cn("transition-colors hover:" + theme.text)}>Contact</button>
             </div>
           </div>
         </footer>
@@ -458,7 +596,7 @@ const SidebarItem = ({ icon, label, active, theme, onClick }: { icon: React.Reac
 );
 
 const FeatureItem = ({ icon, title, desc, theme }: { icon: React.ReactNode, title: string, desc: string, theme: Theme }) => (
-  <div className={cn("p-6 border rounded-3xl", theme.card, theme.border)}>
+  <div className={cn("p-6 border rounded-3xl cursor-pointer hover:scale-[1.02] transition-all duration-300", theme.card, theme.border)}>
     <div className="mb-4">{icon}</div>
     <h4 className={cn("font-bold mb-2", theme.text)}>{title}</h4>
     <p className={cn("text-sm font-medium leading-relaxed", theme.textMuted)}>{desc}</p>

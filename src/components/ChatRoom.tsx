@@ -189,7 +189,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
         theme.sidebar,
         theme.border
       )}>
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-3 md:gap-4 cursor-pointer hover:opacity-80 transition-opacity">
           <div className="relative">
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-[#8e94f2] to-[#5b61e0] flex items-center justify-center shadow-lg shadow-[#8e94f2]/20 overflow-hidden">
               <Logo size={24} showText={false} theme={theme} />

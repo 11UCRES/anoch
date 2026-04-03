@@ -324,6 +324,10 @@ export default function App() {
     }
   }, [socket, messages, partnerUsername, sessionStartTime]);
 
+  const deleteHistory = useCallback((id: string) => {
+    setHistory(prev => prev.filter(item => item.id !== id));
+  }, []);
+
   const handleTyping = useCallback((isTyping: boolean) => {
     if (socket && status === 'matched') {
       socket.emit('typing', isTyping);
@@ -372,6 +376,7 @@ export default function App() {
               theme={theme}
               history={history}
               socketId={socket?.id || null}
+              onDeleteHistory={deleteHistory}
             />
           </motion.div>
         ) : (
