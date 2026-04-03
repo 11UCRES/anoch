@@ -81,9 +81,8 @@ export default function App() {
       const pName = data.partnerUsername || 'Anonymous';
       setPartnerUsername(pName);
       partnerUsernameRef.current = pName;
-      const startTime = Date.now();
-      setSessionStartTime(startTime);
-      sessionStartTimeRef.current = startTime;
+      setSessionStartTime(null);
+      sessionStartTimeRef.current = null;
       setShowSessionEnded(false);
       setMessages([]);
       setIsPartnerTyping(false);
@@ -91,6 +90,11 @@ export default function App() {
 
     newSocket.on('receive_message', (message: Message) => {
       setMessages((prev) => [...prev, message]);
+      if (!sessionStartTimeRef.current) {
+        const startTime = Date.now();
+        setSessionStartTime(startTime);
+        sessionStartTimeRef.current = startTime;
+      }
     });
 
     newSocket.on('partner_typing', (isTyping: boolean) => {
@@ -137,6 +141,11 @@ export default function App() {
         type: 'text'
       };
       setMessages((prev) => [...prev, newMessage]);
+      if (!sessionStartTimeRef.current) {
+        const startTime = Date.now();
+        setSessionStartTime(startTime);
+        sessionStartTimeRef.current = startTime;
+      }
       socket.emit('send_message', { text });
     }
   }, [socket, status]);
@@ -151,6 +160,11 @@ export default function App() {
         type: 'voice'
       };
       setMessages((prev) => [...prev, newMessage]);
+      if (!sessionStartTimeRef.current) {
+        const startTime = Date.now();
+        setSessionStartTime(startTime);
+        sessionStartTimeRef.current = startTime;
+      }
       socket.emit('send_voice', { audio });
     }
   }, [socket, status]);
@@ -158,16 +172,14 @@ export default function App() {
   const handleNext = useCallback(() => {
     if (socket) {
       // Calculate session stats before moving on
-      if (sessionStartTime) {
-        const duration = Date.now() - sessionStartTime;
-        const messageCount = messages.filter(m => m.senderId !== 'system').length;
-        setSessionStats({
-          duration,
-          messageCount,
-          partnerUsername
-        });
-        setShowSessionEnded(true);
-      }
+      const duration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+      const messageCount = messages.filter(m => m.senderId !== 'system').length;
+      setSessionStats({
+        duration,
+        messageCount,
+        partnerUsername
+      });
+      setShowSessionEnded(true);
 
       // Add current session to history before moving on
       const chatMessages = messages.filter(m => m.senderId !== 'system');
@@ -195,16 +207,14 @@ export default function App() {
   const handleLogout = useCallback(() => {
     if (socket) {
       // Calculate session stats before logging out
-      if (sessionStartTime) {
-        const duration = Date.now() - sessionStartTime;
-        const messageCount = messages.filter(m => m.senderId !== 'system').length;
-        setSessionStats({
-          duration,
-          messageCount,
-          partnerUsername
-        });
-        setShowSessionEnded(true);
-      }
+      const duration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+      const messageCount = messages.filter(m => m.senderId !== 'system').length;
+      setSessionStats({
+        duration,
+        messageCount,
+        partnerUsername
+      });
+      setShowSessionEnded(true);
 
       // Add current session to history before logging out
       const chatMessages = messages.filter(m => m.senderId !== 'system');
