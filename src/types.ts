@@ -9,6 +9,7 @@ export interface Message {
   type: MessageType;
   isEdited?: boolean;
   isDeleted?: boolean;
+  replyToId?: string;
   reactions?: { [emoji: string]: string[] }; // emoji -> list of userIds
 }
 

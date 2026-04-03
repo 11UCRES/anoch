@@ -171,7 +171,7 @@ export default function App() {
     }
   }, [socket]);
 
-  const sendMessage = useCallback((text: string) => {
+  const sendMessage = useCallback((text: string, replyToId?: string) => {
     if (socket && status === 'matched') {
       const id = Math.random().toString(36).substr(2, 9);
       const newMessage: Message = {
@@ -179,14 +179,15 @@ export default function App() {
         text,
         senderId: socket.id!,
         timestamp: Date.now(),
-        type: 'text'
+        type: 'text',
+        replyToId
       };
       setMessages((prev) => [...prev, newMessage]);
-      socket.emit('send_message', { id, text });
+      socket.emit('send_message', { id, text, replyToId });
     }
   }, [socket, status]);
 
-  const sendVoice = useCallback((audio: string) => {
+  const sendVoice = useCallback((audio: string, replyToId?: string) => {
     if (socket && status === 'matched') {
       const id = Math.random().toString(36).substr(2, 9);
       const newMessage: Message = {
@@ -194,10 +195,11 @@ export default function App() {
         audio,
         senderId: socket.id!,
         timestamp: Date.now(),
-        type: 'voice'
+        type: 'voice',
+        replyToId
       };
       setMessages((prev) => [...prev, newMessage]);
-      socket.emit('send_voice', { id, audio });
+      socket.emit('send_voice', { id, audio, replyToId });
     }
   }, [socket, status]);
 

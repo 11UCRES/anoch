@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, User, LogOut, Loader2, Volume2, Mic, Circle, Smile, Palette, MoreVertical, Play, Pause, Edit2, Trash2, Heart, ThumbsUp, Laugh, Frown } from 'lucide-react';
+import { Send, User, LogOut, Loader2, Volume2, Mic, Circle, Smile, Palette, MoreVertical, Play, Pause, Edit2, Trash2, Heart, ThumbsUp, Laugh, Frown, Reply, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Message, ConnectionStatus } from '@/src/types';
 import { VoiceRecorder } from './VoiceRecorder';
@@ -10,8 +10,8 @@ import { Theme, themes } from '@/src/themes';
 
 interface ChatRoomProps {
   messages: Message[];
-  onSendMessage: (text: string) => void;
-  onSendVoice: (audio: string) => void;
+  onSendMessage: (text: string, replyToId?: string) => void;
+  onSendVoice: (audio: string, replyToId?: string) => void;
   onEditMessage: (messageId: string, newText: string) => void;
   onDeleteMessage: (messageId: string) => void;
   onAddReaction: (messageId: string, emoji: string) => void;
@@ -56,11 +56,13 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [showReactionsFor, setShowReactionsFor] = useState<string | null>(null);
+  const [replyToId, setReplyToId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const themePickerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -95,10 +97,16 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
   const handleSend = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (inputText.trim()) {
-      onSendMessage(inputText.trim());
+      onSendMessage(inputText.trim(), replyToId || undefined);
       setInputText('');
+      setReplyToId(null);
       onTyping(false);
       setShowEmojiPicker(false);
+      
+      // Keep focus on input for mobile keyboard persistence
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     }
   };
 
@@ -288,14 +296,16 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
           </div>
         </div>
 
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} mode="popLayout">
           {messages.map((msg) => {
             if (msg.senderId === 'system') {
               return (
                 <motion.div
                   key={msg.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -10 }}
                   className="flex justify-center w-full my-4"
                 >
                   <div className={cn(
@@ -341,6 +351,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
                   isMe ? "flex-row-reverse" : "flex-row"
                 )}>
                   <motion.div 
+                    layout
                     onClick={() => setSelectedMessageId(isSelected ? null : msg.id)}
                     className={cn(
                       "px-4 md:px-6 py-2.5 md:py-3.5 shadow-2xl relative cursor-pointer active:scale-[0.99] transition-all duration-300 message-bubble w-fit",
@@ -352,6 +363,27 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
                       isSelected && "ring-2 ring-blue-500/40 scale-[1.01] z-20 shadow-blue-500/10"
                     )}
                   >
+                    {msg.replyToId && !msg.isDeleted && (
+                      <div className={cn(
+                        "mb-3 p-3 rounded-xl border-l-4 text-xs bg-black/10 backdrop-blur-md",
+                        isMe ? "border-white/40" : "border-blue-500/40"
+                      )}>
+                        {(() => {
+                          const repliedMsg = messages.find(m => m.id === msg.replyToId);
+                          if (!repliedMsg) return <span className="italic opacity-50">Original message unavailable</span>;
+                          return (
+                            <>
+                              <div className="font-black mb-1 uppercase tracking-widest opacity-70">
+                                {repliedMsg.senderId === socketId ? "You" : partnerUsername || "Stranger"}
+                              </div>
+                              <div className="truncate max-w-[200px] font-medium opacity-90">
+                                {repliedMsg.isDeleted ? "This message was deleted" : (repliedMsg.type === 'voice' ? "Voice message" : repliedMsg.text)}
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
                     {editingMessageId === msg.id ? (
                       <div className="flex flex-col gap-4 min-w-[240px] md:min-w-[300px]" onClick={(e) => e.stopPropagation()}>
                         <textarea
@@ -433,7 +465,10 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
 
                     {/* Reactions Display */}
                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                      <div className="absolute -bottom-5 right-0 flex flex-wrap gap-1.5 z-30 justify-end">
+                      <div className={cn(
+                        "absolute -bottom-5 flex flex-wrap gap-1.5 z-30",
+                        isMe ? "right-0 justify-end" : "left-0 justify-start"
+                      )}>
                         {Object.entries(msg.reactions).map(([emoji, uids]) => {
                           const userIds = uids as string[];
                           const hasReacted = userIds.includes(socketId!);
@@ -488,9 +523,29 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
 
                   {/* Message Actions */}
                   <div className={cn(
-                    "flex items-center gap-2 message-actions transition-opacity duration-200",
-                    isSelected ? "opacity-100" : "opacity-0 group-message:opacity-100"
+                    "flex items-center gap-1.5 md:gap-2 message-actions transition-all duration-200 opacity-100 scale-100 pointer-events-auto",
+                    isMe ? "flex-row-reverse" : "flex-row"
                   )}>
+                    {!msg.isDeleted && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setReplyToId(msg.id);
+                          setSelectedMessageId(null);
+                        }}
+                        className={cn(
+                          "p-2 md:p-2.5 rounded-full transition-all active:scale-90 border shadow-xl",
+                          theme.accent,
+                          theme.textMuted,
+                          "hover:" + theme.text,
+                          theme.border
+                        )}
+                        title="Reply"
+                      >
+                        <Reply size={16} className="md:size-[18px]" />
+                      </button>
+                    )}
+
                     {!msg.isDeleted && (
                       <div className="relative">
                         <button 
@@ -500,14 +555,14 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
                             setSelectedMessageId(msg.id);
                           }}
                           className={cn(
-                            "p-2.5 rounded-full transition-all active:scale-90 border shadow-xl",
+                            "p-2 md:p-2.5 rounded-full transition-all active:scale-90 border shadow-xl",
                             theme.accent,
                             theme.textMuted,
                             "hover:" + theme.text,
                             theme.border
                           )}
                         >
-                          <Smile size={18} />
+                          <Smile size={16} className="md:size-[18px]" />
                         </button>
                         
                         <AnimatePresence>
@@ -517,26 +572,32 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 15, scale: 0.9 }}
                               className={cn(
-                                "absolute bottom-full mb-4 border rounded-[2rem] p-2 flex gap-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 backdrop-blur-2xl",
+                                "absolute bottom-full mb-4 border rounded-[2rem] p-1.5 md:p-2 flex gap-1 md:gap-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 backdrop-blur-2xl",
                                 theme.card,
                                 theme.border,
-                                isMe ? "right-0" : "left-0"
+                                isMe ? "right-0 origin-bottom-right" : "left-0 origin-bottom-left",
+                                "max-w-[90vw] md:max-w-none overflow-x-auto no-scrollbar"
                               )}
                             >
-                              {['👍', '❤️', '😂', '😮', '😢', '🔥'].map(emoji => (
-                                <button
-                                  key={emoji}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onAddReaction(msg.id, emoji);
-                                    setShowReactionsFor(null);
-                                    setSelectedMessageId(null);
-                                  }}
-                                  className={cn("w-10 h-10 flex items-center justify-center rounded-2xl transition-all text-2xl active:scale-150 hover:scale-125", "hover:bg-white/10")}
-                                >
-                                  {emoji}
-                                </button>
-                              ))}
+                              <div className="flex gap-1 md:gap-1.5 px-1">
+                                {['👍', '❤️', '😂', '😮', '😢', '🔥'].map(emoji => (
+                                  <button
+                                    key={emoji}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onAddReaction(msg.id, emoji);
+                                      setShowReactionsFor(null);
+                                      setSelectedMessageId(null);
+                                    }}
+                                    className={cn(
+                                      "w-10 h-10 md:w-11 md:h-11 flex items-center justify-center rounded-2xl transition-all text-xl md:text-2xl active:scale-150 hover:scale-125 shrink-0", 
+                                      "hover:bg-white/10"
+                                    )}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -641,6 +702,46 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
 
       {/* Input Area */}
       <footer className={cn("p-3 md:p-8 relative border-t", theme.sidebar, theme.border)}>
+        <AnimatePresence>
+          {replyToId && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className={cn(
+                "mb-4 p-4 rounded-3xl border flex items-center justify-between backdrop-blur-3xl shadow-2xl max-w-4xl mx-auto",
+                theme.card,
+                theme.border
+              )}
+            >
+              {(() => {
+                const replyingTo = messages.find(m => m.id === replyToId);
+                if (!replyingTo) return null;
+                return (
+                  <>
+                    <div className="flex items-center gap-4 overflow-hidden">
+                      <div className="w-1 h-10 bg-blue-500 rounded-full shrink-0" />
+                      <div className="flex flex-col min-w-0">
+                        <span className={cn("text-[10px] font-black uppercase tracking-widest", theme.textMuted)}>
+                          Replying to {replyingTo.senderId === socketId ? "yourself" : partnerUsername || "Stranger"}
+                        </span>
+                        <span className={cn("text-sm font-medium truncate", theme.text)}>
+                          {replyingTo.isDeleted ? "This message was deleted" : (replyingTo.type === 'voice' ? "Voice message" : replyingTo.text)}
+                        </span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setReplyToId(null)}
+                      className={cn("p-2 rounded-full hover:bg-white/10 transition-colors", theme.textMuted)}
+                    >
+                      <X size={18} />
+                    </button>
+                  </>
+                );
+              })()}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className={cn(
           "w-full rounded-full px-4 md:px-6 py-1.5 md:py-3 flex items-center gap-2 md:gap-4 transition-all duration-300 border shadow-2xl",
           theme.input,
@@ -703,6 +804,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
 
             {!isRecordingVoice && (
               <input
+                ref={inputRef}
                 type="text"
                 value={inputText}
                 onChange={handleInputChange}
@@ -718,7 +820,13 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({
             
             <div className={cn("flex items-center gap-2 md:gap-4 shrink-0", isRecordingVoice && "flex-1")}>
               <VoiceRecorder 
-                onSend={onSendVoice} 
+                onSend={(audio) => {
+                  onSendVoice(audio, replyToId || undefined);
+                  setReplyToId(null);
+                  setTimeout(() => {
+                    inputRef.current?.focus();
+                  }, 0);
+                }} 
                 onRecordingStateChange={setIsRecordingVoice}
                 disabled={status !== 'matched'} 
                 theme={theme}

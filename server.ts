@@ -62,7 +62,7 @@ async function startServer() {
       broadcastStats();
     });
 
-    socket.on("send_message", (data: { id?: string, text: string }) => {
+    socket.on("send_message", (data: { id?: string, text: string, replyToId?: string }) => {
       const match = activeMatches.get(socket.id);
       if (match) {
         // Simple bad word filter
@@ -78,12 +78,13 @@ async function startServer() {
           text: filteredText,
           senderId: socket.id,
           timestamp: Date.now(),
-          type: 'text'
+          type: 'text',
+          replyToId: data.replyToId
         });
       }
     });
 
-    socket.on("send_voice", (data: { id?: string, audio: string }) => {
+    socket.on("send_voice", (data: { id?: string, audio: string, replyToId?: string }) => {
       const match = activeMatches.get(socket.id);
       if (match) {
         io.to(match.partnerId).emit("receive_message", {
@@ -91,7 +92,8 @@ async function startServer() {
           audio: data.audio,
           senderId: socket.id,
           timestamp: Date.now(),
-          type: 'voice'
+          type: 'voice',
+          replyToId: data.replyToId
         });
       }
     });
