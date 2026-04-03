@@ -1,4 +1,4 @@
-export type MessageType = 'text' | 'voice';
+export type MessageType = 'text' | 'voice' | 'system';
 
 export interface Message {
   id: string;
@@ -7,6 +7,9 @@ export interface Message {
   senderId: string;
   timestamp: number;
   type: MessageType;
+  isEdited?: boolean;
+  isDeleted?: boolean;
+  reactions?: { [emoji: string]: string[] }; // emoji -> list of userIds
 }
 
 export type ConnectionStatus = 'idle' | 'waiting' | 'matched' | 'disconnected';

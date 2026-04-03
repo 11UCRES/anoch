@@ -41,11 +41,27 @@ export const themes: Theme[] = [
     accent: 'bg-slate-900',
   },
   {
-    id: 'sunset',
-    name: 'Sunset',
-    primary: 'bg-orange-500',
-    bg: 'bg-stone-900',
-    text: 'text-stone-100',
-    accent: 'bg-stone-800',
+    id: 'emerald',
+    name: 'Emerald',
+    primary: 'bg-emerald-600',
+    bg: 'bg-zinc-950',
+    text: 'text-zinc-100',
+    accent: 'bg-zinc-900',
+  },
+  {
+    id: 'ocean',
+    name: 'Ocean',
+    primary: 'bg-sky-600',
+    bg: 'bg-slate-950',
+    text: 'text-slate-100',
+    accent: 'bg-slate-900',
+  },
+  {
+    id: 'slate',
+    name: 'Slate',
+    primary: 'bg-slate-700',
+    bg: 'bg-slate-900',
+    text: 'text-slate-100',
+    accent: 'bg-slate-800',
   }
 ];

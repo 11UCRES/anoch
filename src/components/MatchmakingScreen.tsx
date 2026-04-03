@@ -212,7 +212,7 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
                   <FeatureItem 
                     icon={<Zap className="text-pink-500" size={20} />}
                     title="Instant Match"
-                    desc="Matches you with anonymous in seconds."
+                    desc="Matches you with the best partner in seconds."
                   />
                   <FeatureItem 
                     icon={<User className="text-blue-500" size={20} />}

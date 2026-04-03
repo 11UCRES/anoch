@@ -52,15 +52,15 @@ export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ stats, t
 
       {/* Content */}
       <div className="max-w-2xl w-full px-4">
-        <h1 className="text-3xl md:text-5xl font-black text-white mb-3 md:mb-4 tracking-tighter">
+        <h1 className="text-4xl md:text-7xl font-black text-white mb-3 md:mb-6 tracking-tighter">
           Session Ended
         </h1>
-        <p className="text-gray-400 text-base md:text-lg mb-6 md:mb-8 font-medium leading-relaxed max-w-sm mx-auto">
+        <p className="text-gray-400 text-lg md:text-xl mb-8 md:mb-10 font-medium leading-relaxed max-w-md mx-auto">
           Your partner has left the chat. Want to meet someone else?
         </p>
 
-        <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/5 mb-8 md:mb-12">
-          <span className="text-[9px] md:text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/5 mb-10 md:mb-14">
+          <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">
             {Math.floor(stats.duration / 60000)}-MINUTE CONVERSATION ENDED
           </span>
         </div>

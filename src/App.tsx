@@ -81,8 +81,9 @@ export default function App() {
       const pName = data.partnerUsername || 'Anonymous';
       setPartnerUsername(pName);
       partnerUsernameRef.current = pName;
-      setSessionStartTime(null);
-      sessionStartTimeRef.current = null;
+      const startTime = Date.now();
+      setSessionStartTime(startTime);
+      sessionStartTimeRef.current = startTime;
       setShowSessionEnded(false);
       setMessages([]);
       setIsPartnerTyping(false);
@@ -90,11 +91,43 @@ export default function App() {
 
     newSocket.on('receive_message', (message: Message) => {
       setMessages((prev) => [...prev, message]);
-      if (!sessionStartTimeRef.current) {
-        const startTime = Date.now();
-        setSessionStartTime(startTime);
-        sessionStartTimeRef.current = startTime;
-      }
+    });
+
+    newSocket.on('message_edited', (data: { messageId: string, newText: string }) => {
+      setMessages((prev) => prev.map(m => 
+        m.id === data.messageId ? { ...m, text: data.newText, isEdited: true } : m
+      ));
+    });
+
+    newSocket.on('message_deleted', (data: { messageId: string }) => {
+      setMessages((prev) => prev.map(m => 
+        m.id === data.messageId ? { ...m, isDeleted: true, text: 'This message was deleted' } : m
+      ));
+    });
+
+    newSocket.on('reaction_added', (data: { messageId: string, emoji: string, userId: string }) => {
+      setMessages((prev) => prev.map(m => {
+        if (m.id === data.messageId) {
+          const reactions = { ...(m.reactions || {}) };
+          const userIds = [...(reactions[data.emoji] || [])];
+          const index = userIds.indexOf(data.userId);
+          
+          if (index === -1) {
+            userIds.push(data.userId);
+          } else {
+            userIds.splice(index, 1);
+          }
+          
+          if (userIds.length === 0) {
+            delete reactions[data.emoji];
+          } else {
+            reactions[data.emoji] = userIds;
+          }
+          
+          return { ...m, reactions };
+        }
+        return m;
+      }));
     });
 
     newSocket.on('partner_typing', (isTyping: boolean) => {
@@ -141,11 +174,6 @@ export default function App() {
         type: 'text'
       };
       setMessages((prev) => [...prev, newMessage]);
-      if (!sessionStartTimeRef.current) {
-        const startTime = Date.now();
-        setSessionStartTime(startTime);
-        sessionStartTimeRef.current = startTime;
-      }
       socket.emit('send_message', { text });
     }
   }, [socket, status]);
@@ -160,26 +188,69 @@ export default function App() {
         type: 'voice'
       };
       setMessages((prev) => [...prev, newMessage]);
-      if (!sessionStartTimeRef.current) {
-        const startTime = Date.now();
-        setSessionStartTime(startTime);
-        sessionStartTimeRef.current = startTime;
-      }
       socket.emit('send_voice', { audio });
+    }
+  }, [socket, status]);
+
+  const editMessage = useCallback((messageId: string, newText: string) => {
+    if (socket && status === 'matched') {
+      setMessages((prev) => prev.map(m => 
+        m.id === messageId ? { ...m, text: newText, isEdited: true } : m
+      ));
+      socket.emit('edit_message', { messageId, newText });
+    }
+  }, [socket, status]);
+
+  const deleteMessage = useCallback((messageId: string) => {
+    if (socket && status === 'matched') {
+      setMessages((prev) => prev.map(m => 
+        m.id === messageId ? { ...m, isDeleted: true, text: 'This message was deleted' } : m
+      ));
+      socket.emit('delete_message', { messageId });
+    }
+  }, [socket, status]);
+
+  const addReaction = useCallback((messageId: string, emoji: string) => {
+    if (socket && status === 'matched') {
+      setMessages((prev) => prev.map(m => {
+        if (m.id === messageId) {
+          const reactions = { ...(m.reactions || {}) };
+          const userIds = [...(reactions[emoji] || [])];
+          const index = userIds.indexOf(socket.id!);
+          
+          if (index === -1) {
+            userIds.push(socket.id!);
+          } else {
+            userIds.splice(index, 1);
+          }
+          
+          if (userIds.length === 0) {
+            delete reactions[emoji];
+          } else {
+            reactions[emoji] = userIds;
+          }
+          
+          return { ...m, reactions };
+        }
+        return m;
+      }));
+      socket.emit('add_reaction', { messageId, emoji });
     }
   }, [socket, status]);
 
   const handleNext = useCallback(() => {
     if (socket) {
       // Calculate session stats before moving on
-      const duration = sessionStartTime ? Date.now() - sessionStartTime : 0;
-      const messageCount = messages.filter(m => m.senderId !== 'system').length;
-      setSessionStats({
-        duration,
-        messageCount,
-        partnerUsername
-      });
-      setShowSessionEnded(true);
+      if (sessionStartTime) {
+        const duration = Date.now() - sessionStartTime;
+        const messageCount = messages.filter(m => m.senderId !== 'system').length;
+        setSessionStats({
+          duration,
+          messageCount,
+          partnerUsername
+        });
+        setShowSessionEnded(true);
+      }
 
       // Add current session to history before moving on
       const chatMessages = messages.filter(m => m.senderId !== 'system');
@@ -207,14 +278,16 @@ export default function App() {
   const handleLogout = useCallback(() => {
     if (socket) {
       // Calculate session stats before logging out
-      const duration = sessionStartTime ? Date.now() - sessionStartTime : 0;
-      const messageCount = messages.filter(m => m.senderId !== 'system').length;
-      setSessionStats({
-        duration,
-        messageCount,
-        partnerUsername
-      });
-      setShowSessionEnded(true);
+      if (sessionStartTime) {
+        const duration = Date.now() - sessionStartTime;
+        const messageCount = messages.filter(m => m.senderId !== 'system').length;
+        setSessionStats({
+          duration,
+          messageCount,
+          partnerUsername
+        });
+        setShowSessionEnded(true);
+      }
 
       // Add current session to history before logging out
       const chatMessages = messages.filter(m => m.senderId !== 'system');
@@ -298,6 +371,9 @@ export default function App() {
               messages={messages}
               onSendMessage={sendMessage}
               onSendVoice={sendVoice}
+              onEditMessage={editMessage}
+              onDeleteMessage={deleteMessage}
+              onAddReaction={addReaction}
               onNext={handleNext}
               onLogout={handleLogout}
               isPartnerTyping={isPartnerTyping}

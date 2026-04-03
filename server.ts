@@ -96,6 +96,36 @@ async function startServer() {
       }
     });
 
+    socket.on("edit_message", (data: { messageId: string, newText: string }) => {
+      const match = activeMatches.get(socket.id);
+      if (match) {
+        io.to(match.partnerId).emit("message_edited", {
+          messageId: data.messageId,
+          newText: data.newText
+        });
+      }
+    });
+
+    socket.on("delete_message", (data: { messageId: string }) => {
+      const match = activeMatches.get(socket.id);
+      if (match) {
+        io.to(match.partnerId).emit("message_deleted", {
+          messageId: data.messageId
+        });
+      }
+    });
+
+    socket.on("add_reaction", (data: { messageId: string, emoji: string }) => {
+      const match = activeMatches.get(socket.id);
+      if (match) {
+        io.to(match.partnerId).emit("reaction_added", {
+          messageId: data.messageId,
+          emoji: data.emoji,
+          userId: socket.id
+        });
+      }
+    });
+
     socket.on("typing", (isTyping: boolean) => {
       const match = activeMatches.get(socket.id);
       if (match) {
