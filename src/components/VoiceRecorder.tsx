@@ -3,13 +3,16 @@ import { Mic, Square, Send, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 
+import { Theme } from '../themes';
+
 interface VoiceRecorderProps {
   onSend: (audioBase64: string) => void;
   onRecordingStateChange?: (isRecording: boolean) => void;
   disabled?: boolean;
+  theme: Theme;
 }
 
-export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onRecordingStateChange, disabled }) => {
+export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onRecordingStateChange, disabled, theme }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -135,7 +138,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onRecordin
             onClick={startRecording}
             disabled={disabled}
             className={cn(
-              "p-2 text-gray-500 hover:text-[#0084ff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+              "p-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+              theme.textMuted,
+              "hover:" + theme.text,
               disabled && "grayscale"
             )}
           >
@@ -153,13 +158,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onRecordin
               <button
                 type="button"
                 onClick={cancelRecording}
-                className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                className={cn("p-2 transition-colors", theme.textMuted, "hover:text-red-500")}
               >
                 <Trash2 size={20} className="md:size-24" />
               </button>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-xs md:text-sm font-bold text-white">{formatTime(recordingTime)}</span>
+                <span className={cn("text-xs md:text-sm font-bold", theme.text)}>{formatTime(recordingTime)}</span>
               </div>
             </div>
             
@@ -204,7 +209,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onSend, onRecordin
             </button>
             
             <div className="flex-1 flex items-center justify-center gap-3">
-              <div className="text-sm font-bold text-white">
+              <div className={cn("text-sm font-bold", theme.text)}>
                 Voice Message ({formatTime(recordingTime)})
               </div>
             </div>

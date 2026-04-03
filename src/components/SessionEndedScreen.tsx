@@ -26,13 +26,17 @@ export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ stats, t
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className={cn(
-        "flex flex-col items-center justify-center h-full w-full px-6 py-12 text-center overflow-y-auto custom-scrollbar",
+        "flex flex-col items-center justify-center h-full w-full px-6 py-12 text-center overflow-y-auto custom-scrollbar transition-colors duration-500",
         theme.bg
       )}
     >
       {/* Background Icon */}
       <div className="relative mb-8 md:mb-12">
-        <div className="w-32 h-32 md:w-48 md:h-48 rounded-[32px] md:rounded-[48px] bg-white/5 flex items-center justify-center relative overflow-hidden group">
+        <div className={cn(
+          "w-32 h-32 md:w-48 md:h-48 rounded-[32px] md:rounded-[48px] flex items-center justify-center relative overflow-hidden group border",
+          theme.accent,
+          theme.border
+        )}>
           <div className="absolute inset-0 bg-gradient-to-b from-[#8e94f2]/10 to-transparent opacity-50" />
           <Link2Off className="text-[#8e94f2] relative z-10 opacity-80 w-12 h-12 md:w-20 md:h-20" />
           
@@ -52,15 +56,15 @@ export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ stats, t
 
       {/* Content */}
       <div className="max-w-2xl w-full px-4">
-        <h1 className="text-4xl md:text-7xl font-black text-white mb-3 md:mb-6 tracking-tighter">
+        <h1 className={cn("text-4xl md:text-7xl font-black mb-3 md:mb-6 tracking-tighter", theme.text)}>
           Session Ended
         </h1>
-        <p className="text-gray-400 text-lg md:text-xl mb-8 md:mb-10 font-medium leading-relaxed max-w-md mx-auto">
+        <p className={cn("text-lg md:text-xl mb-8 md:mb-10 font-medium leading-relaxed max-w-md mx-auto", theme.textMuted)}>
           Your partner has left the chat. Want to meet someone else?
         </p>
 
-        <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/5 mb-10 md:mb-14">
-          <span className="text-[10px] md:text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">
+        <div className={cn("inline-flex items-center px-4 py-1.5 rounded-full border mb-10 md:mb-14", theme.accent, theme.border)}>
+          <span className={cn("text-[10px] md:text-xs font-bold uppercase tracking-[0.2em]", theme.textMuted)}>
             {Math.floor(stats.duration / 60000)}-MINUTE CONVERSATION ENDED
           </span>
         </div>
@@ -81,7 +85,13 @@ export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ stats, t
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onGoHome}
-            className="w-full sm:w-auto px-6 md:px-10 py-3.5 md:py-5 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 text-white font-black text-base md:text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2 md:gap-3"
+            className={cn(
+              "w-full sm:w-auto px-6 md:px-10 py-3.5 md:py-5 rounded-2xl md:rounded-3xl border font-black text-base md:text-lg transition-all flex items-center justify-center gap-2 md:gap-3",
+              theme.accent,
+              theme.text,
+              theme.border,
+              "hover:bg-white/5"
+            )}
           >
             <Home size={20} />
             Go Home
@@ -90,22 +100,22 @@ export const SessionEndedScreen: React.FC<SessionEndedScreenProps> = ({ stats, t
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 max-w-lg mx-auto">
-          <div className="bg-[#111216] border border-white/5 p-4 md:p-6 rounded-[24px] md:rounded-[32px] text-left">
-            <div className="flex items-center gap-2 text-gray-500 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-1.5 md:mb-2">
+          <div className={cn("border p-4 md:p-6 rounded-[24px] md:rounded-[32px] text-left", theme.card, theme.border)}>
+            <div className={cn("flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-1.5 md:mb-2", theme.textMuted)}>
               <Clock size={12} />
               <span>Duration</span>
             </div>
-            <div className="text-lg md:text-2xl font-black text-white">
+            <div className={cn("text-lg md:text-2xl font-black", theme.text)}>
               {formatDuration(stats.duration)}
             </div>
           </div>
 
-          <div className="bg-[#111216] border border-white/5 p-4 md:p-6 rounded-[24px] md:rounded-[32px] text-left">
-            <div className="flex items-center gap-2 text-gray-500 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-1.5 md:mb-2">
+          <div className={cn("border p-4 md:p-6 rounded-[24px] md:rounded-[32px] text-left", theme.card, theme.border)}>
+            <div className={cn("flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-widest mb-1.5 md:mb-2", theme.textMuted)}>
               <MessageCircle size={12} />
               <span>Messages</span>
             </div>
-            <div className="text-lg md:text-2xl font-black text-white">
+            <div className={cn("text-lg md:text-2xl font-black", theme.text)}>
               {stats.messageCount} exchanged
             </div>
           </div>

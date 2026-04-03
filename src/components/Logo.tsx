@@ -1,13 +1,15 @@
 import React from 'react';
 import { cn } from '@/src/lib/utils';
+import { Theme } from '../themes';
 
 interface LogoProps {
   className?: string;
   size?: number;
   showText?: boolean;
+  theme?: Theme;
 }
 
-export const Logo: React.FC<LogoProps> = ({ className, size = 32, showText = true }) => {
+export const Logo: React.FC<LogoProps> = ({ className, size = 32, showText = true, theme }) => {
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div 
@@ -42,7 +44,7 @@ export const Logo: React.FC<LogoProps> = ({ className, size = 32, showText = tru
       </div>
       
       {showText && (
-        <span className="text-white font-black text-xl tracking-tighter uppercase">
+        <span className={cn("font-black text-xl tracking-tighter uppercase", theme?.text || "text-white")}>
           Nocturne
         </span>
       )}

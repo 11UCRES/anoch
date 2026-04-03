@@ -62,7 +62,7 @@ async function startServer() {
       broadcastStats();
     });
 
-    socket.on("send_message", (data: { text: string }) => {
+    socket.on("send_message", (data: { id?: string, text: string }) => {
       const match = activeMatches.get(socket.id);
       if (match) {
         // Simple bad word filter
@@ -72,9 +72,9 @@ async function startServer() {
           const regex = new RegExp(word, "gi");
           filteredText = filteredText.replace(regex, "****");
         });
-
+ 
         io.to(match.partnerId).emit("receive_message", {
-          id: uuidv4(),
+          id: data.id || uuidv4(),
           text: filteredText,
           senderId: socket.id,
           timestamp: Date.now(),
@@ -83,11 +83,11 @@ async function startServer() {
       }
     });
 
-    socket.on("send_voice", (data: { audio: string }) => {
+    socket.on("send_voice", (data: { id?: string, audio: string }) => {
       const match = activeMatches.get(socket.id);
       if (match) {
         io.to(match.partnerId).emit("receive_message", {
-          id: uuidv4(),
+          id: data.id || uuidv4(),
           audio: data.audio,
           senderId: socket.id,
           timestamp: Date.now(),

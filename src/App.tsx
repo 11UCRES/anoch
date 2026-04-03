@@ -42,25 +42,20 @@ export default function App() {
     partnerUsernameRef.current = partnerUsername;
   }, [partnerUsername]);
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('anonchat-theme');
-    if (savedTheme) {
-      const found = themes.find(t => t.id === savedTheme);
-      if (found) setTheme(found);
-    }
-  }, []);
-
+  // Remove theme persistence to ensure it's session-specific
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme);
-    localStorage.setItem('anonchat-theme', newTheme.id);
   };
 
   useEffect(() => {
-    const newSocket = io(window.location.origin);
+    const newSocket = io(window.location.origin, {
+      transports: ['websocket'],
+      upgrade: false
+    });
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
-      console.log('Connected to server');
+      console.log('Connected to server, socket ID:', newSocket.id);
     });
 
     newSocket.on('stats_update', (newStats: Stats) => {
@@ -76,6 +71,7 @@ export default function App() {
     });
 
     newSocket.on('matched', (data: { partnerId: string, partnerUsername: string }) => {
+      console.log('Matched with:', data.partnerUsername);
       setStatus('matched');
       setPartnerId(data.partnerId);
       const pName = data.partnerUsername || 'Anonymous';
@@ -87,6 +83,8 @@ export default function App() {
       setShowSessionEnded(false);
       setMessages([]);
       setIsPartnerTyping(false);
+      // Reset theme to default when starting a new chat
+      setTheme(themes[0]);
     });
 
     newSocket.on('receive_message', (message: Message) => {
@@ -106,23 +104,30 @@ export default function App() {
     });
 
     newSocket.on('reaction_added', (data: { messageId: string, emoji: string, userId: string }) => {
+      console.log('Reaction received:', data);
       setMessages((prev) => prev.map(m => {
         if (m.id === data.messageId) {
           const reactions = { ...(m.reactions || {}) };
+          const currentEmoji = Object.keys(reactions).find(key => (reactions[key] as string[]).includes(data.userId));
+          
+          // Toggle off if same emoji
+          if (currentEmoji === data.emoji) {
+            reactions[data.emoji] = (reactions[data.emoji] as string[]).filter(id => id !== data.userId);
+            if (reactions[data.emoji].length === 0) delete reactions[data.emoji];
+            return { ...m, reactions };
+          }
+
+          // Otherwise remove from all and add to new
+          Object.keys(reactions).forEach(key => {
+            reactions[key] = (reactions[key] as string[]).filter(id => id !== data.userId);
+            if (reactions[key].length === 0) delete reactions[key];
+          });
+
           const userIds = [...(reactions[data.emoji] || [])];
-          const index = userIds.indexOf(data.userId);
-          
-          if (index === -1) {
+          if (!userIds.includes(data.userId)) {
             userIds.push(data.userId);
-          } else {
-            userIds.splice(index, 1);
           }
-          
-          if (userIds.length === 0) {
-            delete reactions[data.emoji];
-          } else {
-            reactions[data.emoji] = userIds;
-          }
+          reactions[data.emoji] = userIds;
           
           return { ...m, reactions };
         }
@@ -138,6 +143,8 @@ export default function App() {
       setStatus('disconnected');
       setIsPartnerTyping(false);
       setPartnerId(null);
+      // Reset theme to default when session ends
+      setTheme(themes[0]);
       
       // Add a system message to the chat
       const systemMsg: Message = {
@@ -166,29 +173,31 @@ export default function App() {
 
   const sendMessage = useCallback((text: string) => {
     if (socket && status === 'matched') {
+      const id = Math.random().toString(36).substr(2, 9);
       const newMessage: Message = {
-        id: Math.random().toString(36).substr(2, 9),
+        id,
         text,
         senderId: socket.id!,
         timestamp: Date.now(),
         type: 'text'
       };
       setMessages((prev) => [...prev, newMessage]);
-      socket.emit('send_message', { text });
+      socket.emit('send_message', { id, text });
     }
   }, [socket, status]);
 
   const sendVoice = useCallback((audio: string) => {
     if (socket && status === 'matched') {
+      const id = Math.random().toString(36).substr(2, 9);
       const newMessage: Message = {
-        id: Math.random().toString(36).substr(2, 9),
+        id,
         audio,
         senderId: socket.id!,
         timestamp: Date.now(),
         type: 'voice'
       };
       setMessages((prev) => [...prev, newMessage]);
-      socket.emit('send_voice', { audio });
+      socket.emit('send_voice', { id, audio });
     }
   }, [socket, status]);
 
@@ -211,25 +220,27 @@ export default function App() {
   }, [socket, status]);
 
   const addReaction = useCallback((messageId: string, emoji: string) => {
-    if (socket && status === 'matched') {
+    if (socket && socket.id && status === 'matched') {
+      console.log('Adding reaction:', { messageId, emoji, socketId: socket.id });
       setMessages((prev) => prev.map(m => {
         if (m.id === messageId) {
           const reactions = { ...(m.reactions || {}) };
-          const userIds = [...(reactions[emoji] || [])];
-          const index = userIds.indexOf(socket.id!);
+          const currentEmoji = Object.keys(reactions).find(key => (reactions[key] as string[]).includes(socket.id!));
           
-          if (index === -1) {
-            userIds.push(socket.id!);
+          if (currentEmoji === emoji) {
+            reactions[emoji] = (reactions[emoji] as string[]).filter(id => id !== socket.id);
+            if (reactions[emoji].length === 0) delete reactions[emoji];
           } else {
-            userIds.splice(index, 1);
-          }
-          
-          if (userIds.length === 0) {
-            delete reactions[emoji];
-          } else {
+            Object.keys(reactions).forEach(key => {
+              reactions[key] = (reactions[key] as string[]).filter(id => id !== socket.id);
+              if (reactions[key].length === 0) delete reactions[key];
+            });
+            const userIds = [...(reactions[emoji] || [])];
+            if (!userIds.includes(socket.id!)) {
+              userIds.push(socket.id!);
+            }
             reactions[emoji] = userIds;
           }
-          
           return { ...m, reactions };
         }
         return m;
@@ -271,6 +282,7 @@ export default function App() {
       setPartnerId(null);
       setSessionStartTime(null);
       setStatus('waiting');
+      setTheme(themes[0]); // Reset to default theme
       socket.emit('join_queue');
     }
   }, [socket, messages, partnerUsername, sessionStartTime]);
@@ -308,6 +320,7 @@ export default function App() {
       setPartnerId(null);
       setSessionStartTime(null);
       setStatus('idle');
+      setTheme(themes[0]); // Reset to default theme
     }
   }, [socket, messages, partnerUsername, sessionStartTime]);
 
@@ -333,6 +346,7 @@ export default function App() {
               setShowSessionEnded(false);
               setMessages([]);
               setStatus('waiting');
+              setTheme(themes[0]); // Reset to default theme
               socket?.emit('join_queue');
             }}
             onGoHome={() => {
@@ -340,6 +354,7 @@ export default function App() {
               setShowSessionEnded(false);
               setMessages([]);
               setStatus('idle');
+              setTheme(themes[0]); // Reset to default theme
             }}
           />
         ) : status === 'idle' || status === 'waiting' ? (
