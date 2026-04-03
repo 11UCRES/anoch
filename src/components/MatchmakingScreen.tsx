@@ -151,12 +151,11 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
                 className="w-full max-w-2xl text-center"
               >
                 <h1 className={cn("text-5xl md:text-8xl font-black mb-4 md:mb-8 tracking-tighter leading-[0.9]", theme.text)}>
-                  Connect <br className="hidden md:block" />
-                  <span className="text-[#8e94f2] italic">Anonymously</span>
+                  Secure <br className="hidden md:block" />
+                  <span className="text-[#8e94f2] italic">Anonymous Chat</span>
                 </h1>
                 <p className={cn("text-base md:text-xl mb-10 md:mb-16 max-w-xl mx-auto leading-relaxed font-medium", theme.textMuted)}>
-                  Instant 1-to-1 chat. No login. No strings attached. <br className="hidden md:block" />
-                  Find your frequency in the digital nocturne.
+                  Experience the best random stranger messaging platform. Instant 1-to-1 private chat with no registration. Find your frequency in the digital nocturne.
                 </p>
 
                 <div className={cn(
@@ -242,25 +241,30 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
                 </div>
 
                 {/* Feature Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-12 md:mt-16 text-left">
-                  <FeatureItem 
-                    icon={<Zap className="text-pink-500" size={20} />}
-                    title="Instant Match"
-                    desc="Matches you with the best partner in seconds."
-                    theme={theme}
-                  />
-                  <FeatureItem 
-                    icon={<User className="text-blue-500" size={20} />}
-                    title="Real People"
-                    desc="Always talking to a real human being."
-                    theme={theme}
-                  />
-                  <FeatureItem 
-                    icon={<Lock className="text-green-500" size={20} />}
-                    title="End-to-End"
-                    desc="Your conversations vanish instantly."
-                    theme={theme}
-                  />
+                <div className="w-full max-w-4xl mt-20 md:mt-32">
+                  <h2 className={cn("text-2xl md:text-4xl font-black mb-8 md:mb-12 text-center", theme.text)}>
+                    Why Choose Nocturne for <span className="text-[#8e94f2]">Private Messaging</span>?
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 text-left">
+                    <FeatureItem 
+                      icon={<Zap className="text-pink-500" size={20} />}
+                      title="Instant Random Match"
+                      desc="Our advanced matchmaking algorithm connects you with the best partner in seconds for seamless random chat."
+                      theme={theme}
+                    />
+                    <FeatureItem 
+                      icon={<User className="text-blue-500" size={20} />}
+                      title="Real People, No Bots"
+                      desc="Engage in authentic conversations with real strangers from around the world. No AI, just human connection."
+                      theme={theme}
+                    />
+                    <FeatureItem 
+                      icon={<Lock className="text-green-500" size={20} />}
+                      title="End-to-End Privacy"
+                      desc="Your identity is hidden and conversations vanish instantly. We prioritize your digital safety and anonymity."
+                      theme={theme}
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
