@@ -64,11 +64,11 @@ export default function App() {
     });
 
     newSocket.on('stats_update', (newStats: Stats) => {
-      setStats((prev) => ({
-        ...prev,
+      setStats({
+        online: newStats.online,
         waiting: newStats.waiting,
         chatting: newStats.chatting
-      }));
+      });
     });
 
     newSocket.on('waiting', () => {

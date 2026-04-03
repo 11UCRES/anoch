@@ -156,6 +156,19 @@ export const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ onStart, i
                       {isSearching ? "Finding someone compatible..." : "Your identity remains hidden."}
                     </p>
 
+                    {/* Real-time stats display */}
+                    <div className="flex items-center justify-center gap-8 mb-10">
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl font-black text-white">{stats.waiting}</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Waiting</span>
+                      </div>
+                      <div className="w-px h-8 bg-white/5" />
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl font-black text-white">{stats.chatting}</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Chatting</span>
+                      </div>
+                    </div>
+
                     {isSearching ? (
                       <div className="w-full max-w-xs space-y-6">
                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">

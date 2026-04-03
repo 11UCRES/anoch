@@ -27,7 +27,7 @@ async function startServer() {
     io.emit("stats_update", {
       online: totalOnline,
       waiting: waitingQueue.length,
-      chatting: activeMatches.size // activeMatches has 2 entries per pair
+      chatting: activeMatches.size
     });
   };
 
@@ -103,8 +103,7 @@ async function startServer() {
       }
     });
 
-    const handleDisconnect = () => {
-      totalOnline = Math.max(0, totalOnline - 1);
+    const handleMatchExit = () => {
       const match = activeMatches.get(socket.id);
       
       // Remove from queue if they were there
@@ -118,16 +117,18 @@ async function startServer() {
         activeMatches.delete(match.partnerId);
         activeMatches.delete(socket.id);
       }
-      console.log(`User disconnected: ${socket.id}`);
       broadcastStats();
     };
 
     socket.on("next_partner", () => {
-      handleDisconnect();
-      // The client will emit join_queue again after a short delay or UI action
+      handleMatchExit();
     });
 
-    socket.on("disconnect", handleDisconnect);
+    socket.on("disconnect", () => {
+      totalOnline = Math.max(0, totalOnline - 1);
+      handleMatchExit();
+      console.log(`User disconnected: ${socket.id}`);
+    });
   });
 
   // Vite middleware for development
